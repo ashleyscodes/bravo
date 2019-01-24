@@ -1,0 +1,66 @@
+import os
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+#import all data
+filenames = os.listdir('.')
+
+#sort out files we don't need
+numfiles = 0
+count = 0
+for filename in filenames:  
+    
+    #find ONLY the rp data files
+    if not filename.endswith('.txt'): continue
+    wave_areas = np.array( np.loadtxt(filename, skiprows = 9, unpack = True) )
+    numfiles += 1 
+    
+    #separte filename into element, isotope, energy
+    element, isotope, test = filename.split('_')
+    
+    
+    #Invert the waveforms and make them positive
+    def invertPulses(pulse_areas):
+        inverted = np.absolute( pulse_areas )
+        return inverted
+         
+    #Calibrate pulse areas to energy values
+    def convertChannelToEnergy(pulse_channel):
+        slope = 0.94706723 
+        intercept = 0
+        m = np.full(pulse_channel.shape, slope)
+        b = np.full(pulse_channel.shape, intercept)
+        pulse_energies = np.add( np.multiply(pulse_channel, m), b)
+        return pulse_energies
+    
+    #Release the pulses that have areas that are two small or too large 10000-70000
+    def eliminatePulses(pulse_areas):
+        new_pulse_areas = np.sort(pulse_areas)
+        new_pulse_areas = new_pulse_areas[new_pulse_areas < 200000]
+        new_pulse_areas = new_pulse_areas[new_pulse_areas > 0]
+        return new_pulse_areas
+    
+    #Create a saveable array of counts
+    def pulseCounts(pulse_areas):
+        pulse_counts = np.histogram(pulse_areas, bins = 16383)
+        return pulse_counts[0]
+     
+    #Invert the PHS collected from the rp
+    wave_areas = eliminatePulses( invertPulses( wave_areas ) )
+    
+    #Organize counts
+    counts = np.asarray( pulseCounts(wave_areas) )
+    channel = np.arange(0,16383)
+    energy = convertChannelToEnergy( channel )
+    tup2 = channel, counts
+    PHS = np.column_stack(tup2)
+     
+    #Plot PHS
+    sns.set_context(context="poster",font_scale=1.5)
+    plt.figure()
+    plt.plot(energy[0:2000], counts[0:2000], 'k-')
+    plt.xlabel('Energy [keV]')
+    plt.ylabel('Counts')
+    
+print "Пoka"
