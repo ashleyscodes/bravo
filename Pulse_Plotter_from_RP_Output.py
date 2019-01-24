@@ -28,7 +28,7 @@ for filename in filenames:
     waveforms = selectPulses(waveforms)
     plt.figure()
     plt.plot(waveforms, 'k-')
-    plt.title('Raw Pulses')
+    plt.title('Digitized Pulses')
     plt.xlabel('Trace Length')
     plt.ylabel('Pulse Height [Channel]')
 
